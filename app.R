@@ -14,6 +14,19 @@ snakingCountVals <- unique(elements[,6])
 snakingLenVals <- unique(elements[,7])
 snakingAmpVals <- unique(elements[,8])
 
+Assembly_elems <- read.csv(file.path("./Assembly/Assembly.csv"), stringsAsFactors=FALSE)
+str(Assembly_elems)
+assemblyMEI1Vals <- unique(Assembly_elems[,2])
+assemblyMEI2Vals <- unique(Assembly_elems[,3])
+assemblySMIVals <- unique(Assembly_elems[,4])
+assemblyMEO1Vals <- unique(Assembly_elems[,5])
+assemblyMEO2Vals <- unique(Assembly_elems[,6])
+assemblySMOVals <- unique(Assembly_elems[,7])
+assemblyFCVals <- unique(Assembly_elems[,8])
+assemblyELVals <- unique(Assembly_elems[,9])
+assemblyImageVals <- unique(Assembly_elems[,10])
+assemblyImage2Vals <- unique(Assembly_elems[,11])
+
 # Define UI for application that draws a histogram
 ui <- shinyUI(fluidPage(
   
@@ -188,44 +201,60 @@ ui <- shinyUI(fluidPage(
                                                max = 10,
                                                value = 1),
                                    hr(), 
-                                   sliderInput("n3_1",
-                                               "Modulus of Elasticity - inner - warp (GPa):",
-                                               min = 0.08,
-                                               max = 0.22,
-                                               value = 0.08), 
-                                   sliderInput("n3_2",
-                                               "Modulus of Elasticity - inner - weft (GPa):",
-                                               min = 0.08,
-                                               max = 0.22,
-                                               value = 0.08),
-                                   sliderInput("n3_3",
-                                               "Modulus of Elasticity - outer - warp (GPa):",
-                                               min = 0.5,
-                                               max = 1.5,
-                                               value = 0.05),
-                                   sliderInput("n3_4",
-                                               "Modulus of Elasticity - outer - weft (GPa):",
-                                               min = 0.5,
-                                               max = 1.5,
-                                               value = 0.5),
-                                   sliderInput("n3_5",
-                                               "Shear Modulus - inner (MPa):",
-                                               min = 0.6,
-                                               max = 1.4,
-                                               value = 0.6),
-                                   sliderInput("n3_6",
-                                               "Shear Modulus - outer (MPa):",
-                                               min = 0.6,
-                                               max = 1.4,
-                                               value = 0.6),
-                                   sliderInput("n3_7",
-                                               "Friction Coefficient:",
-                                               min = 0.08,
-                                               max = 0.2,
-                                               value = 0.08), 
+                                   shinyWidgets::sliderTextInput(inputId = "n3_1",
+                                                         label = "Modulus of Elasticity - inner - warp (GPa):",
+                                                         choices = assemblyMEI1Vals,
+                                                         animate = TRUE,
+                                                         grid = TRUE,
+                                                         hide_min_max = FALSE), 
+                                   shinyWidgets::sliderTextInput(inputId = "n3_2",
+                                                         label = "Modulus of Elasticity - inner - weft (GPa):",
+                                                         choices = assemblyMEI2Vals,
+                                                         animate = TRUE,
+                                                         grid = TRUE,
+                                                         hide_min_max = FALSE),
+                                   shinyWidgets::sliderTextInput(inputId = "n3_3",
+                                                         label = "Modulus of Elasticity - outer - warp (GPa):",
+                                                         choices = assemblyMEO1Vals,
+                                                         animate = TRUE,
+                                                         grid = TRUE,
+                                                         hide_min_max = FALSE),
+                                   shinyWidgets::sliderTextInput(inputId = "n3_4",
+                                                         label = "Modulus of Elasticity - outer - weft (GPa):",
+                                                         choices = assemblyMEO2Vals,
+                                                         animate = TRUE,
+                                                         grid = TRUE,
+                                                         hide_min_max = FALSE),
+                                   shinyWidgets::sliderTextInput(inputId = "n3_5",
+                                                         label = "Shear Modulus - inner (MPa):",
+                                                         choices = assemblySMIVals,
+                                                         animate = TRUE,
+                                                         grid = TRUE,
+                                                         hide_min_max = FALSE),
+                                   shinyWidgets::sliderTextInput(inputId = "n3_6",
+                                                         label = "Shear Modulus - outer (MPa):",
+                                                         choices = assemblySMOVals,
+                                                         animate = TRUE,
+                                                         grid = TRUE,
+                                                         hide_min_max = FALSE),
+                                   shinyWidgets::sliderTextInput(inputId = "n3_7",
+                                                         label = "Friction Coefficient:",
+                                                         choices = assemblyFCVals,
+                                                         animate = TRUE,
+                                                         grid = TRUE,
+                                                         hide_min_max = FALSE), 
                                    style = "info")
         ),
+        br(),
+        hr(),
+        selectInput("dataset", "Download a dataset:",
+                    choices = c("Snaking", "Assembly")),
+
+        # Button
+        downloadButton("downloadData", "Download"),
         
+        br(),
+        hr(),
         fileInput("file1", "Choose JPG or PNG File",
                   multiple = FALSE,
                   accept = c("image/jpeg", 
@@ -494,6 +523,25 @@ server <- shinyServer(function(input, output, session) {
                       'could not be found', sep =' '))
      
     }, deleteFile = FALSE)
+
+    output$myImage3_actual <- renderImage({
+     #width  <- session$clientData$output_myImage3_actual_width
+     #height <- session$clientData$output_myImage3_actual_height
+
+     capture <- subset(Assembly_elems, (mei1 == input$n3_1 & mei2 == input$n3_2 & meo1 == input$n3_3 & meo2 == input$n3_4 & smi == input$n3_5 & smo == input$n3_6 & 
+                                        fc == input$n3_7), select=c(SI))
+     
+     filename <- normalizePath(file.path('./Assembly/Images', paste(capture[1,1], "_image.jpg", sep="")))
+     
+     # Return a list containing the filename and alt text
+     list(src = filename,
+          width = "100%",
+          #height = "100%",
+          alt = paste("Image name:",
+                      paste(capture[1,1], "_image.jpg", sep=""),
+                      'could not be found', sep =' '))
+     
+    }, deleteFile = FALSE)
     
     output$mytable_snaking = DT::renderDataTable({
      count_out <- subset(elements, (e1 == input$n1_1 & e2 == input$n1_2 & load == input$n1_3 & fc == input$n1_4), select=c(count))
@@ -510,6 +558,37 @@ server <- shinyServer(function(input, output, session) {
        backgroundColor = styleEqual(c("Snaking (count)", "Global Snaking Length (m)", "Maximum Snaking Amplitude (m)"), c('lightblue', 'lightblue', 'lightblue'))
      )
     })
+
+    # Reactive value for selected dataset ----
+    datasetInput <- reactive({
+        switch(input$dataset,
+              "Sanking" = elements,
+              "Assembly" = Assembly_elems)
+      })
+
+    output$downloadData <- downloadHandler(
+      filename = function() {
+        paste(input$dataset, ".csv", sep = "")
+      },
+      content = function(file) {
+        write.csv(datasetInput(), file, row.names = FALSE)
+      }
+    )
+
+    output$mytable_assembly = DT::renderDataTable({
+     el_out <- subset(Assembly_elems, (mei1 == input$n3_1 & mei2 == input$n3_2 & meo1 == input$n3_3 & meo2 == input$n3_4 & smi == input$n3_5 & smo == input$n3_6 & 
+                                        fc == input$n3_7), select=c(el))
+     my_data <- data.frame(
+       Variables =c("Modulus of elasticity – inner – warp", "Modulus of elasticity – inner – weft", "Modulus of elasticity – outer – warp", "Modulus of elasticity – outer – weft", "Shear modulus - inner", "Shear modulus - outer", "Friction coefficient", "Excessive Length (Output)"),
+       Values = c(input$n3_1, input$n3_2, input$n3_3, input$n3_4, input$n3_5, input$n3_6, input$n3_7, el_out[1,1])
+     )
+     
+     datatable(my_data, options = list(dom = 't')) %>% formatStyle(
+       'Variables',
+       target = 'row',
+       backgroundColor = styleEqual(c("Excessive Length (Output)"), c('lightblue'))
+     )
+    })
     
     output$mytable_bunching = DT::renderDataTable({
      my_data <- data.frame(
@@ -521,19 +600,6 @@ server <- shinyServer(function(input, output, session) {
        'Variables',
        target = 'row',
        backgroundColor = styleEqual(c("Location of maximum bunching (Output)"), c('lightblue'))
-     )
-    })
-    
-    output$mytable_assembly = DT::renderDataTable({
-     my_data <- data.frame(
-       Variables =c("Modulus of elasticity – inner – warp", "Modulus of elasticity – inner – weft", "Modulus of elasticity – outer – warp", "Modulus of elasticity – outer – weft", "Shear modulus - inner", "Shear modulus - outer", "Friction coefficient", "Excessive Length (Output)"),
-       Values = c(input$n3_1, input$n3_2, input$n3_3, input$n3_4, input$n3_5, input$n3_6, input$n3_7, "ND")
-     )
-     
-     datatable(my_data) %>% formatStyle(
-       'Variables',
-       target = 'row',
-       backgroundColor = styleEqual(c("Excessive Length (Output)"), c('lightblue'))
      )
     })
     
@@ -691,37 +757,6 @@ server <- shinyServer(function(input, output, session) {
      # Return a list containing the filename and alt text
      list(src = inFile$datapath,
           alt = paste("Random Image"))
-     
-    }, deleteFile = FALSE)
-    
-    output$myImage3_actual <- renderImage({
-     width  <- session$clientData$output_myImage3_actual_width
-     height <- session$clientData$output_myImage3_actual_height
-     
-     # When input$n is 3, filename is ./images/image3.png
-     filename <- normalizePath(file.path('./images',
-                                         paste('assembly_e0_', input$n3_1, 
-                                               '_e1_', input$n3_2,
-                                               '_e2_', input$n3_3,
-                                               '_e3_', input$n3_4,
-                                               '_s0_', input$n3_5,
-                                               '_s1_', input$n3_6,
-                                               '_fric_', input$n3_7,
-                                               '.jpg', sep='')))
-     
-     # Return a list containing the filename and alt text
-     list(src = filename,
-          width = width,
-          height = height,
-          alt = paste("Image name: ",
-                      'assembly_e0_', input$n3_1, 
-                      '_e1_', input$n3_2,
-                      '_e2_', input$n3_3,
-                      '_e3_', input$n3_4,
-                      '_s0_', input$n3_5,
-                      '_s1_', input$n3_6,
-                      '_fric_', input$n3_7,
-                      '.jpg Not generated', sep=''))
      
     }, deleteFile = FALSE)
     
